@@ -1,0 +1,12 @@
+# Row-Level Security — Rôles
+
+| Rôle | Table | Filtre DAX | Décideur |
+|------|-------|-----------|---------|
+| Operateur Paris | dimzones | [ville] = "Paris" | Directeur DSP |
+| Directeur National | dimzones | 1 = 1 | Président AOM |
+| Operateur Lyon | dimzones | [ville] = "Lyon" | Directeur DSP |
+| Analyste Securite | dimzones | Paris ou Toulouse | Préfet + DDPN |
+| Responsable Dev Durable | dimvehiculess | electric ou hybrid | DREAL |
+
+## Test des rôles
+Testé via : Modélisation → Afficher en tant que → [nom du rôle]
