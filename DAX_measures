@@ -1,0 +1,47 @@
+# Mesures DAX
+
+## KPIs de base
+
+### RM — Retard Moyen
+```DAX
+RM = DIVIDE(
+    SUM(facttransport[retard_s]),
+    COUNTROWS(facttransport)
+)
+```
+Seuils : <180s Excellent | 180-300s Normal | >600s Critique
+
+### TA — Taux Annulation
+```DAX
+TA = DIVIDE(
+    COUNTROWS(FILTER(facttransport, 
+    facttransport[annule] = "TRUE")),
+    COUNTROWS(facttransport)
+)
+```
+Seuils : <1% Excellent | >3% Critique
+
+### IC — Indice Congestion
+```DAX
+IC = AVERAGE(facttrfic[congestion_index])
+```
+Seuils : <1.5 Fluide | >2.5 Très critique
+
+## Mesures avancées
+
+### RM Variation %
+```DAX
+RM Variation % = DIVIDE(
+    [RM] - [RM Année Préc],
+    [RM Année Préc]
+) * 100
+```
+
+### Cible SNBC
+```DAX
+Cible SNBC = 
+VAR EC2019 = CALCULATE([EC Total],
+    DIM_TEMPS[annee] = 2019)
+VAR AnneeActuelle = SELECTEDVALUE(DIM_TEMPS[annee])
+RETURN EC2019 * POWER(1 - 0.04, AnneeActuelle - 2019)
+```
