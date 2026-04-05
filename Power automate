@@ -1,0 +1,8 @@
+## Power Automate
+
+### Flux : Alerte Daily Urban Mobility
+- Déclencheur : Planifié chaque jour à 10h00
+- Action : Email automatique Outlook
+- Destinataire : Aziz.ZNAIDI@esprit.tn
+- Testé le : 05/04/2026 ✅
+- Statut : Actif
