@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Urban Mobility">
+<meta name="theme-color" content="#060912">
+<title>Urban Mobility</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root{
+  --p:#118DFF;--ora:#E66C37;--grn:#3FC670;--pur:#744EC2;
+  --red:#D64550;--yel:#D9B300;--teal:#00BCF2;
+  --bg:#060912;--card:rgba(14,20,36,0.88);--bdr:rgba(37,43,59,0.85);
+  --txt:#E8ECF5;--mut:#6B7599;
+  --nav:62px;--hdr:66px;--sb:26px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--txt);font-family:-apple-system,'Segoe UI',sans-serif;overflow:hidden;user-select:none}
+::-webkit-scrollbar{display:none}
+#bgc{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* ── SCREENS ── */
+.scr{position:fixed;inset:0;z-index:10;display:flex;flex-direction:column;
+  transition:opacity .3s ease,transform .3s ease;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.scr.hidden{opacity:0;pointer-events:none;transform:translateY(18px)}
+.scr.slide-left{transform:translateX(-100%);opacity:0}
+.scr.slide-right{transform:translateX(100%);opacity:0}
+
+/* ── SPLASH ── */
+#splash{align-items:center;justify-content:center;background:transparent;gap:0}
+.splash-logo{width:88px;height:88px;background:linear-gradient(135deg,#118DFF,#0044CC);
+  border-radius:26px;display:flex;align-items:center;justify-content:center;
+  font-size:44px;font-weight:900;color:#fff;box-shadow:0 0 60px rgba(17,141,255,.4);
+  animation:logoIn .6s cubic-bezier(.34,1.56,.64,1) forwards}
+@keyframes logoIn{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+.splash-title{font-size:28px;font-weight:800;color:var(--txt);margin-top:18px;letter-spacing:-.5px;
+  animation:fadeUp .5s .25s both}
+.splash-sub{font-size:13px;color:var(--mut);margin-top:6px;animation:fadeUp .5s .35s both}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.splash-btns{display:flex;flex-direction:column;gap:11px;width:100%;max-width:320px;
+  margin-top:42px;animation:fadeUp .5s .5s both;padding:0 20px}
+.sbtn{width:100%;padding:15px;border-radius:15px;border:none;font-size:15px;font-weight:700;
+  cursor:pointer;transition:opacity .15s;letter-spacing:.2px}
+.sbtn:active{opacity:.82}
+.sbtn-p{background:linear-gradient(135deg,#118DFF,#0050DD);color:#fff}
+.sbtn-s{background:rgba(14,20,36,.9);border:1px solid rgba(37,43,59,.9);color:var(--txt);backdrop-filter:blur(10px)}
+.splash-version{font-size:10px;color:var(--mut);margin-top:20px;animation:fadeUp .5s .65s both}
+
+/* ── AUTH SHARED ── */
+.auth-screen{background:rgba(6,9,18,.96);padding:0 22px 32px;backdrop-filter:blur(20px)}
+.auth-back{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--p);
+  cursor:pointer;padding:14px 0 0;font-weight:600;min-height:44px}
+.auth-hdr{text-align:left;margin:16px 0 24px}
+.auth-title{font-size:24px;font-weight:800;color:var(--txt);letter-spacing:-.3px}
+.auth-sub{font-size:13px;color:var(--mut);margin-top:5px;line-height:1.5}
+
+.fld-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+  color:var(--mut);margin-bottom:6px;margin-top:16px;display:block}
+.fld{width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--bdr);
+  background:rgba(10,15,28,.8);color:var(--txt);font-size:14px;outline:none;
+  transition:border-color .2s;-webkit-appearance:none}
+.fld:focus{border-color:var(--p)}
+.fld::placeholder{color:var(--mut)}
+.fld-err{border-color:var(--red)!important}
+.err-msg{font-size:11px;color:var(--red);margin-top:5px;display:none}
+.err-msg.show{display:block}
+
+.pw-wrap{position:relative}
+.pw-eye{position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;
+  color:var(--mut);font-size:18px;padding:4px}
+
+.strength-bar{height:3px;border-radius:2px;margin-top:6px;background:var(--bdr);overflow:hidden}
+.strength-fill{height:100%;border-radius:2px;transition:width .3s,background .3s;width:0%}
+.strength-lbl{font-size:10px;color:var(--mut);margin-top:4px}
+
+.auth-btn{width:100%;padding:15px;border-radius:14px;border:none;
+  background:linear-gradient(135deg,#118DFF,#0050DD);color:#fff;
+  font-size:15px;font-weight:700;cursor:pointer;margin-top:24px;
+  transition:opacity .15s;letter-spacing:.2px}
+.auth-btn:active{opacity:.82}
+.auth-btn:disabled{opacity:.42;cursor:not-allowed}
+.auth-alt{text-align:center;font-size:12px;color:var(--mut);margin-top:14px;cursor:pointer}
+.auth-alt span{color:var(--p);font-weight:700}
+
+/* ── REGISTER STEP 2 — ROLE ── */
+.step-indicator{display:flex;align-items:center;gap:6px;margin-bottom:20px}
+.step-dot{width:8px;height:8px;border-radius:50%;background:var(--bdr)}
+.step-dot.act{background:var(--p);width:20px;border-radius:10px}
+.step-dot.done{background:var(--grn)}
+.step-lbl{font-size:11px;color:var(--mut);margin-left:4px}
+
+.roles-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px}
+.rc2{background:var(--card);border:1.5px solid var(--bdr);border-radius:16px;
+  padding:15px 11px;cursor:pointer;transition:all .2s;text-align:center;backdrop-filter:blur(10px)}
+.rc2:active{transform:scale(.96)}
+.rc2.sel{background:rgba(14,20,36,.95)}
+.rc2-ico{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;
+  justify-content:center;font-size:20px;margin:0 auto 9px;transition:background .2s}
+.rc2-name{font-size:11.5px;font-weight:700;color:var(--txt);line-height:1.3}
+.rc2-desc{font-size:9.5px;color:var(--mut);margin-top:3px;line-height:1.4}
+.rc2-access{font-size:9px;color:var(--mut);margin-top:6px;border-top:1px solid var(--bdr);
+  padding-top:5px;line-height:1.4}
+
+/* ── TOAST ── */
+#toast{position:fixed;top:110px;left:50%;transform:translateX(-50%) translateY(-14px);
+  background:rgba(8,13,26,.97);border:1px solid rgba(17,141,255,.3);border-radius:14px;
+  padding:11px 17px;display:flex;align-items:center;gap:9px;z-index:999;
+  opacity:0;transition:all .3s cubic-bezier(.34,1.56,.64,1);pointer-events:none;
+  backdrop-filter:blur(20px);min-width:240px;max-width:90vw}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.t-ico{font-size:19px;flex-shrink:0}.t-t{font-size:12px;font-weight:700;color:var(--txt)}
+.t-s{font-size:10px;color:var(--mut);margin-top:2px}
+
+/* ── APP SHELL ── */
+#app{background:transparent}
+#sb{height:var(--sb);display:flex;justify-content:space-between;align-items:center;
+  padding:0 18px;font-size:12px;font-weight:600;background:rgba(4,6,14,.8);
+  backdrop-filter:blur(16px);z-index:2;position:relative}
+#hdr{height:var(--hdr);background:rgba(5,8,18,.84);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(17,141,255,.13);display:flex;align-items:center;
+  padding:0 14px;gap:10px;z-index:2;position:relative}
+#hdr-logo{width:36px;height:36px;background:linear-gradient(135deg,var(--p),#0044CC);
+  border-radius:10px;display:flex;align-items:center;justify-content:center;
+  font-weight:900;font-size:18px;color:#fff;flex-shrink:0}
+#hdr-info{flex:1}
+#hdr-title{font-size:14.5px;font-weight:700}
+#hdr-sub{font-size:10px;color:var(--mut);margin-top:2px;display:flex;align-items:center;gap:4px}
+.ldot{width:6px;height:6px;background:var(--grn);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+#user-pill{background:rgba(17,141,255,.12);border:1px solid rgba(17,141,255,.26);
+  border-radius:20px;padding:5px 10px;font-size:10px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;gap:5px;flex-shrink:0}
+
+#content{position:absolute;top:calc(var(--sb) + var(--hdr));left:0;right:0;
+  bottom:var(--nav);overflow-y:auto;padding:11px 13px 14px;
+  -webkit-overflow-scrolling:touch;scroll-behavior:smooth;z-index:1}
+
+#nav{position:fixed;bottom:0;left:0;right:0;height:var(--nav);
+  background:rgba(3,5,12,.94);backdrop-filter:blur(22px);
+  border-top:1px solid rgba(17,141,255,.12);display:flex;z-index:100}
+.ni{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;cursor:pointer;color:var(--mut);font-size:8.5px;font-weight:600;
+  transition:color .2s;position:relative}
+.ni.act{color:var(--p)}
+.ni.act svg{transform:scale(1.1)}
+.nbadge{position:absolute;top:5px;right:calc(50% - 15px);background:var(--red);color:#fff;
+  font-size:8px;font-weight:800;width:14px;height:14px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center}
+
+/* ── CARDS ── */
+.card{background:var(--card);border:1px solid var(--bdr);border-radius:14px;
+  padding:13px;margin-bottom:9px;backdrop-filter:blur(8px)}
+.kgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:9px}
+.kc{background:var(--card);border:1px solid var(--bdr);border-radius:13px;
+  padding:12px;border-left-width:3px;border-left-style:solid;backdrop-filter:blur(8px)}
+.klbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--mut);margin-bottom:4px}
+.kval{font-size:21px;font-weight:800;line-height:1}
+.kunit{font-size:11px;font-weight:400;color:var(--mut)}
+.kchg{font-size:10px;font-weight:600;margin-top:5px}
+.up{color:var(--grn)}.dn{color:var(--red)}.wn{color:var(--yel)}
+.st{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+  color:var(--mut);margin:11px 0 7px}.st:first-child{margin-top:0}
+
+/* ── SLIDER ── */
+.kpi-ctrl{background:var(--card);border:1px solid var(--bdr);border-radius:14px;
+  padding:13px;margin-bottom:9px;backdrop-filter:blur(8px)}
+.kch{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+.kch-name{font-size:12px;font-weight:700;color:var(--txt)}
+.kch-val{font-size:20px;font-weight:800}
+input[type=range]{width:100%;height:5px;border-radius:3px;outline:none;
+  appearance:none;-webkit-appearance:none;cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;
+  border-radius:50%;border:2.5px solid #fff;cursor:pointer;transition:transform .15s}
+input[type=range]::-webkit-slider-thumb:active{transform:scale(1.2)}
+.thr-line{display:flex;justify-content:space-between;font-size:10px;color:var(--mut);margin-top:5px}
+
+/* PROGRESS */
+.pbar-bg{background:rgba(37,43,59,.9);border-radius:4px;height:7px;overflow:hidden;margin-top:5px}
+.pbar-fill{height:100%;border-radius:4px;transition:width .5s ease}
+.badge{display:inline-block;padding:2px 8px;border-radius:6px;font-size:9.5px;font-weight:700}
+
+/* GAUGE */
+.gauge-row{display:flex;justify-content:space-around;align-items:center}
+.g-side{text-align:center}
+.g-lbl{font-size:10px;color:var(--mut)}
+.g-val{font-size:19px;font-weight:800;color:var(--txt)}
+.g-chg{font-size:11px;margin-top:3px}
+
+/* INSIGHT */
+.insight-box{background:rgba(17,141,255,.08);border:1px solid rgba(17,141,255,.22);
+  border-radius:12px;padding:11px 13px;margin-bottom:9px}
+.ins-hdr{display:flex;align-items:center;gap:6px;font-size:10px;font-weight:700;
+  color:var(--p);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.ins-txt{font-size:11.5px;color:var(--txt);line-height:1.5}
+.alert-box{background:rgba(214,69,80,.1);border:1px solid rgba(214,69,80,.3);
+  border-radius:12px;padding:11px 13px;margin-bottom:9px;display:flex;gap:10px}
+
+/* TABLE */
+.mtbl{width:100%;font-size:11px;border-collapse:collapse}
+.mtbl th{text-align:left;font-size:9.5px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.5px;color:var(--mut);padding:0 0 7px;border-bottom:1px solid var(--bdr)}
+.mtbl td{padding:7px 0;color:var(--txt);border-bottom:1px solid rgba(37,43,59,.4)}
+.mtbl td:last-child{text-align:right}
+
+/* SDG */
+.sdg-row{display:flex;align-items:center;gap:12px;background:var(--card);
+  border:1px solid var(--bdr);border-radius:14px;padding:13px;margin-bottom:9px}
+.sdg-num{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;
+  justify-content:center;font-weight:900;font-size:21px;color:#fff;flex-shrink:0}
+
+/* CHIPS */
+.chips{display:flex;gap:7px;margin-bottom:9px;overflow-x:auto;padding-bottom:2px}
+.chip{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;
+  cursor:pointer;border:1px solid var(--bdr);background:var(--card);color:var(--mut);
+  transition:all .15s;flex-shrink:0}
+.chip.on{background:rgba(17,141,255,.18);border-color:var(--p);color:var(--p)}
+
+/* BUTTONS */
+.btn{width:100%;padding:13px;border-radius:12px;border:none;font-size:13px;font-weight:700;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:opacity .15s;margin-bottom:8px;letter-spacing:.2px}
+.btn:active{opacity:.82}.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-p{background:linear-gradient(135deg,#0066FF,#00BCF2);color:#fff}
+.btn-s{background:var(--card);border:1px solid var(--bdr);color:var(--txt)}
+.btn-r{background:rgba(214,69,80,.15);border:1px solid rgba(214,69,80,.35);color:var(--red)}
+
+/* FLOW */
+.flow-step{display:flex;gap:10px;margin-bottom:2px}
+.fsl{display:flex;flex-direction:column;align-items:center}
+.fsic{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:13px;flex-shrink:0;transition:background .3s}
+.fsline{width:2px;flex:1;min-height:12px;margin:3px 0;background:var(--bdr)}
+.fsb{flex:1;padding-bottom:10px}
+.fstitle{font-size:13px;font-weight:600;color:var(--txt)}
+.fsdesc{font-size:11px;color:var(--mut);margin-top:2px;line-height:1.45}
+.fs-pending .fsic{background:rgba(37,43,59,.9);border:1px solid var(--bdr)}
+.fs-running .fsic{background:rgba(17,141,255,.25);animation:pulse .7s infinite}
+.fs-done .fsic{background:rgba(63,198,112,.25)}
+.fs-err .fsic{background:rgba(214,69,80,.25)}
+.log-box{background:rgba(8,12,20,.85);border:1px solid var(--bdr);border-radius:12px;
+  padding:11px;max-height:150px;overflow-y:auto;font-size:10px;font-family:monospace;
+  color:var(--mut);line-height:1.7}
+.lOK{color:var(--grn)}.lERR{color:var(--red)}.lINFO{color:var(--p)}
+
+/* LOGOUT SHEET */
+#logout-modal{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.65);
+  display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px)}
+#logout-modal.hidden{display:none}
+.modal-sheet{background:#0C1220;border-radius:22px 22px 0 0;padding:22px 20px 36px;
+  width:100%;max-width:420px}
+.ms-title{font-size:16px;font-weight:700;color:var(--txt);margin-bottom:5px}
+.ms-sub{font-size:12px;color:var(--mut);margin-bottom:18px;line-height:1.5}
+
+/* CHART WRAP */
+.chart-wrap{position:relative}
+
+/* input type text/email/number */
+input[type=email],input[type=text],input[type=number],input[type=password]{
+  width:100%;padding:9px 12px;border-radius:10px;border:1px solid var(--bdr);
+  background:rgba(8,12,22,.8);color:var(--txt);font-size:13px;margin-bottom:6px;
+  outline:none;transition:border-color .2s;-webkit-appearance:none}
+input:focus{border-color:var(--p)}
+</style>
+</head>
+<body>
+<canvas id="bgc"></canvas>
+
+<!-- ═══ TOAST ═══ -->
+<div id="toast"><div class="t-ico" id="t-ico">⚡</div><div><div class="t-t" id="t-t"></div><div class="t-s" id="t-s"></div></div></div>
+
+<!-- ═══════════════════════════════
+     SCREEN 1 — SPLASH
+════════════════════════════════ -->
+<div class="scr" id="s-splash">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px">
+    <div class="splash-logo">U</div>
+    <div class="splash-title">Urban Mobility</div>
+    <div class="splash-sub">Dashboard décisionnel · T4 2025</div>
+    <div class="splash-btns">
+      <button class="sbtn sbtn-p" onclick="showScreen('s-login')">Se connecter</button>
+      <button class="sbtn sbtn-s" onclick="showScreen('s-register-1')">Créer un compte</button>
+    </div>
+    <div class="splash-version">v2.0 · Power BI + Power Automate</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     SCREEN 2 — LOGIN
+════════════════════════════════ -->
+<div class="scr hidden" id="s-login">
+  <div class="auth-screen" style="flex:1">
+    <div class="auth-back" onclick="showScreen('s-splash')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      Retour
+    </div>
+    <div class="auth-hdr">
+      <div class="auth-title">Connexion</div>
+      <div class="auth-sub">Accédez à votre tableau de bord Urban Mobility</div>
+    </div>
+
+    <label class="fld-lbl">Adresse email</label>
+    <input class="fld" type="email" id="l-email" placeholder="votre@email.com" oninput="validateLogin()">
+    <div class="err-msg" id="l-email-err">Email invalide</div>
+
+    <label class="fld-lbl">Mot de passe</label>
+    <div class="pw-wrap">
+      <input class="fld" type="password" id="l-pw" placeholder="••••••••" oninput="validateLogin()" style="padding-right:44px">
+      <div class="pw-eye" onclick="togglePw('l-pw',this)">👁</div>
+    </div>
+    <div class="err-msg" id="l-pw-err">Mot de passe incorrect</div>
+
+    <div style="text-align:right;margin-top:4px;margin-bottom:8px">
+      <span style="font-size:12px;color:var(--p);cursor:pointer;font-weight:600" onclick="forgotPw()">Mot de passe oublié ?</span>
+    </div>
+
+    <!-- Comptes demo -->
+    <div style="background:rgba(17,141,255,.07);border:1px solid rgba(17,141,255,.2);border-radius:12px;padding:11px 13px;margin-bottom:4px">
+      <div style="font-size:10px;font-weight:700;color:var(--p);text-transform:uppercase;letter-spacing:.5px;margin-bottom:7px">Comptes de démonstration</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px" id="demo-accounts"></div>
+    </div>
+
+    <button class="auth-btn" id="l-btn" onclick="doLogin()" disabled>Se connecter</button>
+    <div class="auth-alt" onclick="showScreen('s-register-1')">Pas de compte ? <span>Créer un compte</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     SCREEN 3a — REGISTER STEP 1
+════════════════════════════════ -->
+<div class="scr hidden" id="s-register-1">
+  <div class="auth-screen" style="flex:1">
+    <div class="auth-back" onclick="showScreen('s-splash')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      Retour
+    </div>
+    <div class="step-indicator">
+      <div class="step-dot act"></div><div class="step-dot"></div>
+      <div class="step-lbl">Étape 1 sur 2 — Informations personnelles</div>
+    </div>
+    <div class="auth-hdr" style="margin-top:4px">
+      <div class="auth-title">Créer un compte</div>
+      <div class="auth-sub">Renseignez vos informations pour accéder au dashboard</div>
+    </div>
+
+    <label class="fld-lbl">Prénom</label>
+    <input class="fld" type="text" id="r-fname" placeholder="Marie" oninput="validateReg1()">
+
+    <label class="fld-lbl">Nom</label>
+    <input class="fld" type="text" id="r-lname" placeholder="Dupont" oninput="validateReg1()">
+
+    <label class="fld-lbl">Adresse email professionnelle</label>
+    <input class="fld" type="email" id="r-email" placeholder="m.dupont@urbanmobility.fr" oninput="validateReg1()">
+    <div class="err-msg" id="r-email-err">Email déjà utilisé ou invalide</div>
+
+    <label class="fld-lbl">Mot de passe</label>
+    <div class="pw-wrap">
+      <input class="fld" type="password" id="r-pw" placeholder="Minimum 8 caractères" oninput="checkStrength()" style="padding-right:44px;margin-bottom:0">
+      <div class="pw-eye" onclick="togglePw('r-pw',this)">👁</div>
+    </div>
+    <div class="strength-bar"><div class="strength-fill" id="str-fill"></div></div>
+    <div class="strength-lbl" id="str-lbl">Entrez un mot de passe</div>
+
+    <label class="fld-lbl" style="margin-top:10px">Confirmer le mot de passe</label>
+    <div class="pw-wrap">
+      <input class="fld" type="password" id="r-pw2" placeholder="••••••••" oninput="validateReg1()" style="padding-right:44px">
+      <div class="pw-eye" onclick="togglePw('r-pw2',this)">👁</div>
+    </div>
+    <div class="err-msg" id="r-pw-err">Les mots de passe ne correspondent pas</div>
+
+    <button class="auth-btn" id="r1-btn" onclick="goReg2()" disabled>Continuer →</button>
+    <div class="auth-alt" onclick="showScreen('s-login')">Déjà un compte ? <span>Se connecter</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     SCREEN 3b — REGISTER STEP 2
+════════════════════════════════ -->
+<div class="scr hidden" id="s-register-2">
+  <div class="auth-screen" style="flex:1">
+    <div class="auth-back" onclick="showScreen('s-register-1')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      Retour
+    </div>
+    <div class="step-indicator">
+      <div class="step-dot done"></div><div class="step-dot act"></div>
+      <div class="step-lbl">Étape 2 sur 2 — Profil décideur</div>
+    </div>
+    <div class="auth-hdr" style="margin-top:4px">
+      <div class="auth-title">Votre rôle</div>
+      <div class="auth-sub">Choisissez votre profil pour personnaliser votre accès au dashboard</div>
+    </div>
+
+    <div class="roles-grid2" id="roles-grid2"></div>
+
+    <div style="background:rgba(37,43,59,.4);border-radius:10px;padding:10px 12px;margin-top:12px;font-size:11px;color:var(--mut);line-height:1.5" id="role-access-info">
+      Sélectionnez un rôle pour voir les accès disponibles.
+    </div>
+
+    <button class="auth-btn" id="r2-btn" onclick="doRegister()" disabled>Créer mon compte ✓</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     SCREEN 4 — APP DASHBOARD
+════════════════════════════════ -->
+<div class="scr hidden" id="s-app">
+  <div id="sb">
+    <span id="clock">09:41</span>
+    <div style="display:flex;gap:7px;align-items:center">
+      <svg width="15" height="11" viewBox="0 0 15 11" fill="var(--txt)"><rect x="0" y="7" width="2.5" height="4" rx=".5"/><rect x="3.5" y="4.5" width="2.5" height="6.5" rx=".5"/><rect x="7" y="2" width="2.5" height="9" rx=".5"/><rect x="10.5" y="0" width="2.5" height="11" rx=".5"/></svg>
+      <svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="2.5" stroke="var(--txt)" stroke-width="1"/><rect x="2" y="2" width="16" height="8" rx="1.5" fill="var(--txt)"/><path d="M23 4v4a2 2 0 0 0 0-4z" fill="var(--txt)"/></svg>
+    </div>
+  </div>
+  <div id="hdr">
+    <div id="hdr-logo">U</div>
+    <div id="hdr-info">
+      <div id="hdr-title">Urban Mobility</div>
+      <div id="hdr-sub"><div class="ldot"></div><span id="page-lbl">Aperçu</span> · Auto-refresh</div>
+    </div>
+    <div id="user-pill" onclick="openLogout()">
+      <span id="u-ico">👔</span><span id="u-lbl">DG</span>
+    </div>
+  </div>
+  <div id="content"></div>
+  <nav id="nav">
+    <div class="ni act" data-p="0" onclick="goTo(0)"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>Aperçu</div>
+    <div class="ni" data-p="1" onclick="goTo(1)"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M4 16c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2H6c-1.1 0-2 .9-2 2v10zm2 0V9h12v7H6zm4 4v-2h4v2H8zM4 7h16v2H4z"/></svg>Transport</div>
+    <div class="ni" data-p="2" onclick="goTo(2)"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.92 5.01C18.72 4.42 18.16 4 17.5 4h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-6.99zM6.5 15c-.83 0-1.5-.67-1.5-1.5S5.67 12 6.5 12 8 12.67 8 13.5 7.33 15 6.5 15zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>Trafic</div>
+    <div class="ni" data-p="3" onclick="goTo(3)"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17 8C8 10 5.9 16.17 3.82 19.57L5.71 21s5-4 12-4c5 0 9-4 9-9s-4-9-9-9c-5 0-9 4-9 9"/></svg>Environ.</div>
+    <div class="ni" data-p="4" onclick="goTo(4)"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 4l6 2.18V11c0 3.72-2.56 7.2-6 8.33-3.44-1.13-6-4.61-6-8.33V7.18L12 5z"/></svg>Sécurité</div>
+    <div class="ni" data-p="5" onclick="goTo(5)" id="ni-flow">
+      <div class="nbadge" id="flow-badge">2</div>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3L4 14h7l-2 7 9-11h-7l2-7z"/></svg>Flow
+    </div>
+  </nav>
+</div>
+
+<!-- LOGOUT MODAL -->
+<div id="logout-modal" class="hidden">
+  <div class="modal-sheet">
+    <div class="ms-title">Se déconnecter ?</div>
+    <div class="ms-sub" id="logout-sub">Vous allez quitter votre session.</div>
+    <button class="btn btn-r" onclick="confirmLogout()">Confirmer la déconnexion</button>
+    <button class="btn btn-s" onclick="document.getElementById('logout-modal').classList.add('hidden')">Annuler</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+//  BACKGROUND ANIMATION (CITY)
+// ════════════════════════════════════════
+(()=>{
+  const c=document.getElementById('bgc'),x=c.getContext('2d');
+  let W,H,f=0;
+  const rs=()=>{W=c.width=innerWidth;H=c.height=innerHeight};
+  rs();addEventListener('resize',rs);
+  const BLD=[],RY=[.61,.80],RX=[.22,.50,.78];
+  function genB(){
+    BLD.length=0;let px=-20;
+    for(let i=0;i<Math.ceil(W/25)+3;i++){
+      const w=15+Math.random()*28,h=50+Math.random()*(H*.38);
+      const ws=[];
+      for(let r=0;r<Math.floor(h/12);r++)
+        for(let c2=0;c2<Math.floor(w/9);c2++)
+          if(Math.random()>.35)ws.push({x:4+c2*9,y:6+r*12,lit:Math.random()>.28,flk:Math.random()>.82});
+      BLD.push({x:px,w,h,ws});px+=w+2+Math.random()*9;
+    }
+  }
+  genB();
+  const VEH=[];
+  function spV(){
+    if(Math.random()>.3){
+      const ry=RY[~~(Math.random()*2)],dir=Math.random()>.5?1:-1;
+      const col=['#118DFF','#E66C37','#3FC670','#CCCCFF','#D9B300'][~~(Math.random()*5)];
+      VEH.push({t:'h',x:dir>0?-60:W+60,y:ry*H+(Math.random()>.5?-6:6),w:16+Math.random()*13,h:7,dir,sp:.7+Math.random()*1.2,col,tail:[],mt:20+~~(Math.random()*26),bus:Math.random()>.82});
+    }else{
+      const rx=RX[~~(Math.random()*3)],dir=Math.random()>.5?1:-1;
+      VEH.push({t:'v',x:rx*W+(Math.random()>.5?-5:5),y:dir>0?-40:H+40,w:7,h:13,dir,sp:.5+Math.random()*.9,col:Math.random()>.5?'#118DFF':'#E66C37',tail:[],mt:14+~~(Math.random()*18),bus:Math.random()>.85});
+    }
+  }
+  for(let i=0;i<12;i++)spV();
+  const PRT=[];
+  function spP(){PRT.push({x:Math.random()*W,y:Math.random()*H*.5,r:1+Math.random()*1.4,a:.1+Math.random()*.28,vx:(Math.random()-.5)*.27,vy:-.17-Math.random()*.27,life:0,ml:120+Math.random()*180,col:Math.random()>.5?'#118DFF':'#3FC670'})}
+  for(let i=0;i<26;i++)spP();
+  const LT=RX.map(rx=>({x:rx*W,phase:~~(Math.random()*3),timer:~~(Math.random()*180)}));
+  function draw(){
+    x.clearRect(0,0,W,H);
+    const sk=x.createLinearGradient(0,0,0,H);
+    sk.addColorStop(0,'#020407');sk.addColorStop(.45,'#050B18');sk.addColorStop(1,'#040810');
+    x.fillStyle=sk;x.fillRect(0,0,W,H);
+    x.strokeStyle='rgba(17,141,255,.032)';x.lineWidth=.5;
+    for(let gx=0;gx<W;gx+=40){x.beginPath();x.moveTo(gx,0);x.lineTo(gx,H);x.stroke()}
+    for(let gy=0;gy<H;gy+=40){x.beginPath();x.moveTo(0,gy);x.lineTo(W,gy);x.stroke()}
+    RX.forEach(rx=>{const vx=rx*W;x.fillStyle='#090D1A';x.fillRect(vx-13,0,26,H*.84);x.strokeStyle='rgba(255,255,160,.12)';x.lineWidth=1;x.setLineDash([9,13]);x.beginPath();x.moveTo(vx,0);x.lineTo(vx,H*.84);x.stroke();x.setLineDash([])});
+    RY.forEach(ry=>{const vy=ry*H;x.fillStyle='#090D1A';x.fillRect(0,vy-12,W,24);x.strokeStyle='rgba(255,255,160,.12)';x.lineWidth=1;x.setLineDash([13,11]);x.beginPath();x.moveTo(0,vy);x.lineTo(W,vy);x.stroke();x.setLineDash([])});
+    RY.forEach(ry=>RX.forEach(rx=>{const ix=rx*W,iy=ry*H,ig=x.createRadialGradient(ix,iy,0,ix,iy,20);ig.addColorStop(0,'rgba(17,141,255,.08)');ig.addColorStop(1,'rgba(17,141,255,0)');x.fillStyle=ig;x.beginPath();x.arc(ix,iy,20,0,Math.PI*2);x.fill()}));
+    const sY=H*.59;
+    BLD.forEach(b=>{
+      const bt=sY-b.h;
+      const bg=x.createLinearGradient(b.x,bt,b.x+b.w,bt+b.h);bg.addColorStop(0,'#0A0F1E');bg.addColorStop(1,'#070B16');
+      x.fillStyle=bg;x.fillRect(b.x,bt,b.w,b.h);
+      x.fillStyle='rgba(17,141,255,.055)';x.fillRect(b.x,bt,1.5,b.h);
+      b.ws.forEach(w=>{
+        if(!w.lit)return;
+        const a=w.flk?.25+.34*Math.abs(Math.sin(f*.03+b.x)):.5+.15*Math.sin(f*.007+w.y);
+        const wcs=['rgba(255,238,170,','rgba(170,210,255,','rgba(190,255,220,'];
+        x.fillStyle=wcs[~~((b.x+w.y)*.1)%3]+a+')';x.fillRect(b.x+w.x,bt+w.y,4,5);
+      });
+      if(b.h>90&&~~(f/28)%2===0){x.fillStyle='rgba(255,70,70,.8)';x.beginPath();x.arc(b.x+b.w/2,bt-2,1.5,0,Math.PI*2);x.fill()}
+    });
+    const gg=x.createLinearGradient(0,H*.54,0,H*.68);gg.addColorStop(0,'rgba(17,141,255,.03)');gg.addColorStop(1,'rgba(0,0,0,0)');
+    x.fillStyle=gg;x.fillRect(0,H*.54,W,H*.14);
+    LT.forEach(l=>{l.timer++;if(l.timer>240){l.phase=(l.phase+1)%3;l.timer=0}
+      const ly=RY[0]*H-22,cols=['#FF3040','#FFB800','#00DD55'],gc=['rgba(255,48,64,.5)','rgba(255,184,0,.5)','rgba(0,221,85,.5)'];
+      x.fillStyle='#1A2030';x.fillRect(l.x-1,ly-10,2,16);
+      const tg=x.createRadialGradient(l.x,ly-14,0,l.x,ly-14,9);tg.addColorStop(0,gc[l.phase]);tg.addColorStop(1,'rgba(0,0,0,0)');
+      x.fillStyle=tg;x.beginPath();x.arc(l.x,ly-14,9,0,Math.PI*2);x.fill();
+      x.fillStyle=cols[l.phase];x.beginPath();x.arc(l.x,ly-14,3.5,0,Math.PI*2);x.fill();
+    });
+    if(f%56===0&&VEH.length<26)spV();
+    const dead=[];
+    VEH.forEach((v,vi)=>{
+      if(v.t==='h')v.x+=v.dir*v.sp;else v.y+=v.dir*v.sp;
+      if((v.t==='h'&&((v.dir>0&&v.x>W+80)||(v.dir<0&&v.x<-80)))||(v.t==='v'&&((v.dir>0&&v.y>H+60)||(v.dir<0&&v.y<-60))))dead.push(vi);
+      v.tail.unshift({x:v.x,y:v.y});if(v.tail.length>v.mt)v.tail.pop();
+      v.tail.forEach((pt,ti)=>{const a=(1-ti/v.tail.length)*.2;x.fillStyle=v.col+Math.floor(a*255).toString(16).padStart(2,'0');const vw=v.t==='h'?v.w*(1-ti/v.tail.length):v.w*.6,vh=v.t==='v'?v.h*(1-ti/v.tail.length):v.h*.6;x.fillRect(pt.x-vw/2,pt.y-vh/2,vw,vh)});
+      x.save();x.shadowColor=v.col;x.shadowBlur=8;x.fillStyle=v.col;
+      const bm=v.bus?1.75:1;
+      if(v.t==='h'){const vw=v.w*bm;x.beginPath();x.roundRect(v.x-vw/2,v.y-v.h/2,vw,v.h,2);x.fill();const hx=v.dir>0?v.x+vw/2-1:v.x-vw/2+1;x.shadowColor='#fff';x.shadowBlur=6;x.fillStyle='rgba(255,255,210,.9)';x.beginPath();x.arc(hx,v.y-2,1.5,0,Math.PI*2);x.fill();x.beginPath();x.arc(hx,v.y+2,1.5,0,Math.PI*2);x.fill()}
+      else{const vh=v.h*bm;x.beginPath();x.roundRect(v.x-v.w/2,v.y-vh/2,v.w,vh,2);x.fill();const hy=v.dir>0?v.y+vh/2-1:v.y-vh/2+1;x.fillStyle='rgba(255,255,210,.9)';x.beginPath();x.arc(v.x-2,hy,1.5,0,Math.PI*2);x.fill();x.beginPath();x.arc(v.x+2,hy,1.5,0,Math.PI*2);x.fill()}
+      x.restore();
+    });
+    dead.reverse().forEach(i=>VEH.splice(i,1));
+    if(f%7===0&&PRT.length<36)spP();
+    PRT.forEach((p,pi)=>{
+      p.x+=p.vx;p.y+=p.vy;p.life++;
+      const lr=p.life/p.ml,a=p.a*(lr<.1?lr/.1:lr>.8?(1-lr)/.2:1);
+      x.save();x.globalAlpha=a;
+      PRT.slice(pi+1,pi+4).forEach(p2=>{const d=Math.hypot(p.x-p2.x,p.y-p2.y);if(d<75){x.strokeStyle=p.col;x.lineWidth=.4;x.globalAlpha=a*(1-d/75)*.35;x.beginPath();x.moveTo(p.x,p.y);x.lineTo(p2.x,p2.y);x.stroke()}});
+      x.globalAlpha=a;x.fillStyle=p.col;x.beginPath();x.arc(p.x,p.y,p.r,0,Math.PI*2);x.fill();x.restore();
+      if(p.life>=p.ml)PRT.splice(pi,1);
+    });
+    x.fillStyle='rgba(0,0,0,.022)';for(let sl=0;sl<H;sl+=4)x.fillRect(0,sl,W,1);
+    f++;requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ════════════════════════════════════════
+//  ROLES DEFINITION
+// ════════════════════════════════════════
+const ROLES={
+  dg:{label:'Directeur Général',short:'DG',ico:'👔',color:'#118DFF',
+    desc:'Vue stratégique complète',
+    access:'Accès : Tous les KPIs · Toutes les pages · Flow complet · Export',
+    pages:[0,1,2,3,4,5]},
+  ops:{label:'Resp. Opérations',short:'OPS',ico:'🚌',color:'#E66C37',
+    desc:'Transport & Trafic urbain',
+    access:'Accès : Transport · Trafic · Retards · Flow alertes ops',
+    pages:[0,1,2,5]},
+  env:{label:'Resp. Environnement',short:'ENV',ico:'🌿',color:'#3FC670',
+    desc:'CO₂, ATMO & ODD',
+    access:'Accès : Environnement · ODD 11 & 13 · Flow alertes CO₂',
+    pages:[0,3,5]},
+  sec:{label:'Resp. Sécurité',short:'SEC',ico:'🛡️',color:'#744EC2',
+    desc:'Satisfaction & Incidents',
+    access:'Accès : Sécurité · Satisfaction usagers · Flow alertes',
+    pages:[0,4,5]}
+};
+
+// ════════════════════════════════════════
+//  USER STORE (localStorage)
+// ════════════════════════════════════════
+const STORE_KEY='um_users_v1';
+function getUsers(){try{return JSON.parse(localStorage.getItem(STORE_KEY)||'[]')}catch{return[]}}
+function saveUsers(u){try{localStorage.setItem(STORE_KEY,JSON.stringify(u))}catch{}}
+
+// Seed demo accounts
+function seedDemo(){
+  const users=getUsers();
+  const demos=[
+    {fname:'Alice',lname:'Martin',email:'dg@urbanmobility.fr',pw:'Demo1234!',role:'dg'},
+    {fname:'Bruno',lname:'Leroy',email:'ops@urbanmobility.fr',pw:'Demo1234!',role:'ops'},
+    {fname:'Clara',lname:'Benoit',email:'env@urbanmobility.fr',pw:'Demo1234!',role:'env'},
+    {fname:'David',lname:'Simon',email:'sec@urbanmobility.fr',pw:'Demo1234!',role:'sec'},
+  ];
+  demos.forEach(d=>{if(!users.find(u=>u.email===d.email))users.push(d)});
+  saveUsers(users);
+}
+seedDemo();
+
+// ════════════════════════════════════════
+//  SCREEN NAVIGATION
+// ════════════════════════════════════════
+const SCREENS=['s-splash','s-login','s-register-1','s-register-2','s-app'];
+function showScreen(id){
+  SCREENS.forEach(s=>{
+    const el=document.getElementById(s);
+    if(el)el.classList.toggle('hidden',s!==id);
+  });
+}
+
+// ════════════════════════════════════════
+//  TOAST
+// ════════════════════════════════════════
+let _tt;
+function toast(ico,t,s,bc='rgba(17,141,255,.3)'){
+  const el=document.getElementById('toast');
+  document.getElementById('t-ico').textContent=ico;
+  document.getElementById('t-t').textContent=t;
+  document.getElementById('t-s').textContent=s;
+  el.style.borderColor=bc;el.classList.add('show');
+  clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),3400);
+}
+
+// ════════════════════════════════════════
+//  CLOCK
+// ════════════════════════════════════════
+function tick(){const n=new Date();document.getElementById('clock').textContent=n.getHours().toString().padStart(2,'0')+':'+n.getMinutes().toString().padStart(2,'0')}
+tick();setInterval(tick,30000);
+
+// ════════════════════════════════════════
+//  DEMO ACCOUNTS RENDER
+// ════════════════════════════════════════
+function renderDemoAccounts(){
+  const el=document.getElementById('demo-accounts');if(!el)return;
+  el.innerHTML=Object.entries(ROLES).map(([k,r])=>`
+  <div onclick="fillDemo('${k}')" style="cursor:pointer;background:rgba(17,141,255,.06);border:1px solid rgba(17,141,255,.15);border-radius:9px;padding:7px 8px;transition:background .15s">
+    <div style="font-size:13px;margin-bottom:2px">${r.ico}</div>
+    <div style="font-size:10px;font-weight:700;color:var(--txt)">${r.short}</div>
+    <div style="font-size:9px;color:var(--mut)">${k}@urbanmobility.fr</div>
+  </div>`).join('');
+}
+function fillDemo(role){
+  document.getElementById('l-email').value=role+'@urbanmobility.fr';
+  document.getElementById('l-pw').value='Demo1234!';
+  validateLogin();
+  toast('👆','Compte démo rempli','Cliquez sur Se connecter');
+}
+
+// ════════════════════════════════════════
+//  PW VISIBILITY
+// ════════════════════════════════════════
+function togglePw(id,btn){
+  const el=document.getElementById(id);
+  if(el.type==='password'){el.type='text';btn.textContent='🙈'}
+  else{el.type='password';btn.textContent='👁'}
+}
+
+// ════════════════════════════════════════
+//  PASSWORD STRENGTH
+// ════════════════════════════════════════
+function checkStrength(){
+  const pw=document.getElementById('r-pw').value;
+  const fill=document.getElementById('str-fill');
+  const lbl=document.getElementById('str-lbl');
+  let score=0;
+  if(pw.length>=8)score++;if(pw.length>=12)score++;
+  if(/[A-Z]/.test(pw))score++;if(/[0-9]/.test(pw))score++;if(/[^A-Za-z0-9]/.test(pw))score++;
+  const levels=[['0%','#D64550','Trop court'],['25%','#D64550','Faible'],['50%','#D9B300','Moyen'],['75%','#E66C37','Fort'],['100%','#3FC670','Très fort']];
+  const [w,c,t]=levels[Math.min(score,4)];
+  fill.style.width=w;fill.style.background=c;lbl.textContent=t;lbl.style.color=c;
+  validateReg1();
+}
+
+// ════════════════════════════════════════
+//  VALIDATION
+// ════════════════════════════════════════
+function isEmail(e){return/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)}
+
+function validateLogin(){
+  const email=document.getElementById('l-email').value;
+  const pw=document.getElementById('l-pw').value;
+  document.getElementById('l-btn').disabled=!(isEmail(email)&&pw.length>=6);
+}
+function validateReg1(){
+  const fn=document.getElementById('r-fname').value.trim();
+  const ln=document.getElementById('r-lname').value.trim();
+  const em=document.getElementById('r-email').value;
+  const pw=document.getElementById('r-pw').value;
+  const pw2=document.getElementById('r-pw2').value;
+  const ok=fn&&ln&&isEmail(em)&&pw.length>=8&&pw===pw2;
+  document.getElementById('r1-btn').disabled=!ok;
+  const pwe=document.getElementById('r-pw-err');
+  pwe.classList.toggle('show',pw2&&pw!==pw2);
+}
+
+// ════════════════════════════════════════
+//  LOGIN
+// ════════════════════════════════════════
+let currentUser=null;
+function doLogin(){
+  const email=document.getElementById('l-email').value.trim().toLowerCase();
+  const pw=document.getElementById('l-pw').value;
+  const users=getUsers();
+  const user=users.find(u=>u.email.toLowerCase()===email&&u.pw===pw);
+  if(!user){
+    document.getElementById('l-pw-err').classList.add('show');
+    document.getElementById('l-pw').classList.add('fld-err');
+    toast('❌','Identifiants incorrects','Vérifiez email et mot de passe','rgba(214,69,80,.4)');
+    return;
+  }
+  document.getElementById('l-pw-err').classList.remove('show');
+  document.getElementById('l-pw').classList.remove('fld-err');
+  launchApp(user);
+}
+
+// ════════════════════════════════════════
+//  REGISTER
+// ════════════════════════════════════════
+let regData={};
+let selectedRoleKey=null;
+
+function goReg2(){
+  const email=document.getElementById('r-email').value.trim().toLowerCase();
+  const users=getUsers();
+  if(users.find(u=>u.email.toLowerCase()===email)){
+    document.getElementById('r-email-err').classList.add('show');
+    document.getElementById('r-email').classList.add('fld-err');
+    return;
+  }
+  document.getElementById('r-email-err').classList.remove('show');
+  document.getElementById('r-email').classList.remove('fld-err');
+  regData={
+    fname:document.getElementById('r-fname').value.trim(),
+    lname:document.getElementById('r-lname').value.trim(),
+    email,pw:document.getElementById('r-pw').value
+  };
+  renderRolesGrid();
+  showScreen('s-register-2');
+}
+
+function renderRolesGrid(){
+  const grid=document.getElementById('roles-grid2');
+  grid.innerHTML=Object.entries(ROLES).map(([k,r])=>`
+  <div class="rc2" id="rc-${k}" onclick="selectRole2('${k}')">
+    <div class="rc2-ico" id="rci-${k}" style="background:${r.color}22">${r.ico}</div>
+    <div class="rc2-name">${r.label}</div>
+    <div class="rc2-desc">${r.desc}</div>
+    <div class="rc2-access">${r.access}</div>
+  </div>`).join('');
+}
+
+function selectRole2(key){
+  selectedRoleKey=key;
+  const r=ROLES[key];
+  document.querySelectorAll('.rc2').forEach(c=>{
+    const k=c.id.replace('rc-','');
+    c.classList.toggle('sel',k===key);
+    c.style.borderColor=k===key?ROLES[k].color:'var(--bdr)';
+    document.getElementById('rci-'+k).style.background=k===key?ROLES[k].color+'33':ROLES[k].color+'18';
+  });
+  document.getElementById('role-access-info').innerHTML=
+    `<strong style="color:${r.color}">${r.ico} ${r.label}</strong><br>${r.access}`;
+  document.getElementById('r2-btn').disabled=false;
+}
+
+function doRegister(){
+  if(!selectedRoleKey)return;
+  const user={...regData,role:selectedRoleKey};
+  const users=getUsers();users.push(user);saveUsers(users);
+  toast('🎉','Compte créé avec succès !',`Bienvenue ${user.fname} !`,'rgba(63,198,112,.4)');
+  setTimeout(()=>launchApp(user),600);
+}
+
+// ════════════════════════════════════════
+//  LAUNCH APP
+// ════════════════════════════════════════
+function launchApp(user){
+  currentUser=user;
+  const role=ROLES[user.role];
+  document.getElementById('u-ico').textContent=role.ico;
+  document.getElementById('u-lbl').textContent=role.short;
+  showScreen('s-app');
+  goTo(0);
+  toast('👋',`Bonjour, ${user.fname} !`,role.label+' · T4 2025');
+}
+
+// ════════════════════════════════════════
+//  LOGOUT
+// ════════════════════════════════════════
+function openLogout(){
+  const r=ROLES[currentUser?.role]||{};
+  document.getElementById('logout-sub').textContent=
+    `Connecté en tant que ${currentUser?.fname||''} (${r.label||''}).`;
+  document.getElementById('logout-modal').classList.remove('hidden');
+}
+function confirmLogout(){
+  document.getElementById('logout-modal').classList.add('hidden');
+  currentUser=null;destroyCharts();currentPage=-1;
+  showScreen('s-splash');
+  renderDemoAccounts();
+}
+
+// ════════════════════════════════════════
+//  KPI STATE
+// ════════════════════════════════════════
+const KPI={
+  voyages:2.4,retard:4.2,satisfaction:7.8,co2:142,congestion:6.4,
+  incidents:328,annulation:2.8,vitesse:28,charge_bus:78,
+  charge_metro:65,charge_tram:82,delinquance:5.4
+};
+const THR={
+  retard:{w:3.5,a:4.0},satisfaction:{w:7.8,a:7.5},
+  co2:{w:130,a:145},congestion:{w:6.0,a:8.0},
+  incidents:{w:350,a:400},annulation:{w:3.0,a:4.0}
+};
+
+function kStatus(k,v){
+  const t=THR[k];if(!t)return'';
+  const low=['satisfaction'].includes(k);
+  const br=low?v<t.a:v>t.a,wn=low?v<t.w:v>t.w;
+  if(br)return`<span class="badge" style="background:rgba(214,69,80,.18);color:#D64550">⚡ Alerte</span>`;
+  if(wn)return`<span class="badge" style="background:rgba(217,179,0,.18);color:#D9B300">⚠ Avertis.</span>`;
+  return`<span class="badge" style="background:rgba(63,198,112,.18);color:#3FC670">✓ OK</span>`;
+}
+
+function updateKPI(key,val,unit,color,min,max){
+  KPI[key]=parseFloat(val);
+  const pct=((val-min)/(max-min)*100).toFixed(0);
+  const sv=document.getElementById('sv-'+key);
+  if(sv){sv.textContent=parseFloat(val).toFixed(1)+unit;sv.style.color=color}
+  const sl=document.getElementById('sl-'+key);
+  if(sl)sl.style.background=`linear-gradient(to right,${color} ${pct}%,rgba(37,43,59,.9) ${pct}%)`;
+  if(THR[key]){
+    const t=THR[key],low=['satisfaction'].includes(key),v=KPI[key];
+    if((low&&v<t.a)||(!low&&v>t.a))toast('🚨','Seuil critique !',key+' = '+parseFloat(val).toFixed(1)+unit,'rgba(214,69,80,.4)');
+  }
+}
+
+function mkSlider(key,label,min,max,step,color,unit){
+  const val=KPI[key],pct=((val-min)/(max-min)*100).toFixed(0);
+  return`<div class="kpi-ctrl">
+    <div class="kch"><div class="kch-name">${label}</div>
+    <div class="kch-val" id="sv-${key}" style="color:${color}">${val}${unit}</div></div>
+    ${kStatus(key,val)?`<div style="margin-bottom:8px">${kStatus(key,val)}</div>`:''}
+    <input type="range" id="sl-${key}" min="${min}" max="${max}" step="${step}" value="${val}"
+      style="background:linear-gradient(to right,${color} ${pct}%,rgba(37,43,59,.9) ${pct}%)"
+      oninput="updateKPI('${key}',this.value,'${unit}','${color}',${min},${max})">
+    <div class="thr-line"><span>Min ${min}${unit}</span><span>Max ${max}${unit}</span></div>
+  </div>`;
+}
+
+function pbar(pct,color){return`<div class="pbar-bg"><div class="pbar-fill" style="width:${pct}%;background:${color}"></div></div>`}
+function kcard(lbl,val,unit,chg,pos,color){
+  return`<div class="kc" style="border-left-color:${color}">
+    <div class="klbl">${lbl}</div>
+    <div class="kval" style="color:${color}">${val}<span class="kunit">${unit}</span></div>
+    <div class="kchg ${pos?'up':'dn'}">${pos?'▲':'▼'} ${chg}</div>
+  </div>`;
+}
+
+function gaugeHTML(val,max,label,color){
+  const pct=Math.min(val/max,1);
+  const R=52,cx=80,cy=72;
+  const sa=Math.PI*.75,ea=Math.PI*2.25,va=sa+(ea-sa)*pct;
+  const ap=(s,e,r)=>{const x1=cx+r*Math.cos(s),y1=cy+r*Math.sin(s),x2=cx+r*Math.cos(e),y2=cy+r*Math.sin(e);return`M${x1.toFixed(1)} ${y1.toFixed(1)} A${r} ${r} 0 ${e-s>Math.PI?1:0} 1 ${x2.toFixed(1)} ${y2.toFixed(1)}`};
+  return`<svg width="160" height="92" viewBox="0 0 160 92"><path d="${ap(sa,ea,R)}" fill="none" stroke="#1E2540" stroke-width="9" stroke-linecap="round"/><path d="${ap(sa,va,R)}" fill="none" stroke="${color}" stroke-width="9" stroke-linecap="round"/><text x="${cx}" y="${cy+8}" text-anchor="middle" fill="${color}" font-size="22" font-weight="800" font-family="-apple-system,sans-serif">${val}</text><text x="${cx}" y="${cy+23}" text-anchor="middle" fill="#6B7599" font-size="10" font-family="-apple-system,sans-serif">${label}</text></svg>`;
+}
+
+// ════════════════════════════════════════
+//  DATA
+// ════════════════════════════════════════
+const D={
+  months:['Jul','Aoû','Sep','Oct','Nov','Déc'],
+  mdelay:[5.1,4.8,4.5,4.3,4.0,4.2],
+  hcong:[3.2,7.1,8.9,6.4,4.2,5.1,4.8,9.2,8.7,5.3,2.8],
+  hL:['06h','07h','08h','09h','10h','12h','15h','17h','18h','20h','22h'],
+  zcong:[{z:'Centre',v:8.4},{z:'Nord',v:6.2},{z:'Est',v:7.1},{z:'Sud',v:5.9},{z:'Ouest',v:4.3}],
+  co2:[{m:'Jan',a:12.8,t:11.2},{m:'Fév',a:11.4,t:11.0},{m:'Mar',a:12.1,t:10.8},{m:'Avr',a:11.8,t:10.6},{m:'Mai',a:12.3,t:10.4},{m:'Jun',a:11.6,t:10.2}],
+  sat:[7.2,7.4,7.6,7.5,7.9,7.8],
+  atmo:[142,98,67,23,8],
+  satF:[{f:'Ponctualité',v:6.8},{f:'Propreté',v:8.1},{f:'Sécurité',v:7.2},{f:'Prix',v:7.9},{f:'Fréquence',v:7.5},{f:'Confort',v:8.3}],
+  lines:[{l:'L1 Express',d:2.1,c:1.2},{l:'L3 Central',d:4.8,c:3.1},{l:'L5 Nord',d:3.2,c:2.0},{l:'L7 Est',d:6.1,c:4.5},{l:'L9 Circ.',d:5.3,c:2.8}],
+};
+
+// ════════════════════════════════════════
+//  PAGE BUILDERS
+// ════════════════════════════════════════
+function buildP0(){
+  const name=currentUser?.fname||'';
+  return`
+  <div style="background:rgba(17,141,255,.08);border:1px solid rgba(17,141,255,.18);border-radius:14px;padding:13px;margin-bottom:9px;display:flex;align-items:center;gap:12px">
+    <div style="font-size:26px">${ROLES[currentUser?.role]?.ico||'👤'}</div>
+    <div><div style="font-size:14px;font-weight:700">Bonjour, ${name} !</div>
+    <div style="font-size:11px;color:var(--mut);margin-top:2px">${ROLES[currentUser?.role]?.label||''} · ${ROLES[currentUser?.role]?.access||''}</div></div>
+  </div>
+  <div class="st">KPIs principaux — T4 2025</div>
+  <div class="kgrid">
+    ${kcard('Voyages totaux',KPI.voyages+'M','','▲ +3.2%',true,'#118DFF')}
+    ${kcard('Retard moyen',KPI.retard.toFixed(1),'min','▼ −0.3',true,'#E66C37')}
+    ${kcard('Satisfaction',KPI.satisfaction.toFixed(1),'/10','▲ +0.4',true,'#3FC670')}
+    ${kcard('CO₂',KPI.co2+'K','t','▲ −2.1%',true,'#744EC2')}
+    ${kcard('Congestion',KPI.congestion.toFixed(1),'/10','▼ +0.2',false,'#D9B300')}
+    ${kcard('Incidents',KPI.incidents,'','▲ −12',true,'#D64550')}
+  </div>
+  ${KPI.retard>THR.retard.a?`<div class="alert-box"><span style="font-size:18px">🚨</span><div><div style="font-size:12px;font-weight:700;color:#D64550">Alerte retard</div><div style="font-size:11px;margin-top:3px">${KPI.retard.toFixed(1)} min dépasse le seuil de ${THR.retard.a} min.</div></div></div>`:''}
+  <div class="st">Satisfaction — 6 mois</div>
+  <div class="card"><div class="chart-wrap" style="height:88px"><canvas id="c0"></canvas></div></div>
+  <div class="st">Ajuster un KPI en direct</div>
+  ${mkSlider('retard','Retard moyen',1,10,.1,'#E66C37','min')}
+  ${mkSlider('satisfaction','Satisfaction',4,10,.1,'#3FC670','/10')}
+  ${mkSlider('congestion','Congestion',1,10,.1,'#D9B300','/10')}
+  <div class="st">ODD alignement</div>
+  <div class="sdg-row"><div class="sdg-num" style="background:#E66C37">11</div><div><div style="font-size:12px;font-weight:700">Villes durables</div><div style="font-size:10px;color:var(--mut);margin-top:3px">CO₂ : −2.1% · En cours ✓</div></div></div>
+  <div class="sdg-row" style="margin-bottom:0"><div class="sdg-num" style="background:#3F7E44">13</div><div><div style="font-size:12px;font-weight:700">Mesures climatiques</div><div style="font-size:10px;color:var(--mut);margin-top:3px">86% conforme SNBC ✓</div></div></div>`;
+}
+
+function buildP1(){
+  return`
+  <div class="chips">
+    <div class="chip on" onclick="fchip(this)">Tous</div>
+    <div class="chip" onclick="fchip(this)">Bus</div>
+    <div class="chip" onclick="fchip(this)">Métro</div>
+    <div class="chip" onclick="fchip(this)">Tram</div>
+  </div>
+
+  <div class="st">Jauge retard moyen</div>
+  <div class="card" id="gauge-retard"><div class="gauge-row">
+    ${gaugeHTML(KPI.retard.toFixed(1),10,'Retard (min)','#E66C37')}
+    <div class="g-side"><div class="g-lbl">Cible</div><div class="g-val">3,0 min</div>
+    <div class="g-chg ${KPI.retard>3?'dn':'up'}">${KPI.retard>3?'▼':'▲'} ${Math.abs(KPI.retard-3).toFixed(1)} min</div>
+    <div style="margin-top:10px"><div class="g-lbl">Taux annul.</div><div class="g-val">${KPI.annulation.toFixed(1)}%</div></div></div>
+  </div></div>
+
+  <div class="st">Paramètres transport</div>
+  ${mkSlider('retard','Retard moyen',1,10,.1,'#E66C37','min')}
+  ${mkSlider('annulation','Taux annulation',0,10,.1,'#D64550','%')}
+  ${mkSlider('charge_bus','Charge Bus',10,100,1,'#118DFF','%')}
+  ${mkSlider('charge_metro','Charge Métro',10,100,1,'#12239E','%')}
+  ${mkSlider('charge_tram','Charge Tram',10,100,1,'#744EC2','%')}
+
+  <div class="st">Évolution retard — 6 mois</div>
+  <div class="card"><div class="chart-wrap" style="height:88px"><canvas id="c1"></canvas></div></div>
+
+  <div class="st">Charge par mode</div>
+  <div class="card" id="charge-section">
+    ${[['Bus',KPI.charge_bus,'#118DFF'],['Métro',KPI.charge_metro,'#12239E'],['Tram',KPI.charge_tram,'#744EC2']].map(([m,v,c])=>`
+    <div style="margin-bottom:9px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+        <span style="font-weight:600">${m}</span><span style="color:${c};font-weight:700">${v}%</span>
+      </div>${pbar(v,c)}
+    </div>`).join('')}
+  </div>
+
+  <div class="st">Lignes — Performance</div>
+  <div class="card"><table class="mtbl">
+    <thead><tr><th>Ligne</th><th>Retard</th><th>Statut</th></tr></thead>
+    <tbody id="lines-tbody">
+      ${D.lines.map(l=>{
+        const col=l.d>5?'#D64550':l.d>3?'#E66C37':'#3FC670';
+        const badge=l.d>5?`<span class="badge" style="background:rgba(214,69,80,.18);color:#D64550">Critique</span>`:
+          l.d>3?`<span class="badge" style="background:rgba(230,108,55,.18);color:#E66C37">Modéré</span>`:
+          `<span class="badge" style="background:rgba(63,198,112,.18);color:#3FC670">OK</span>`;
+        const modeBadge=`<span style="font-size:9px;color:var(--mut);margin-right:6px">${LINE_MODE[l.l]||''}</span>`;
+        return`<tr><td>${modeBadge}${l.l}</td><td style="color:${col};font-weight:700">${l.d} min</td><td>${badge}</td></tr>`;
+      }).join('')}
+    </tbody>
+  </table></div>`;
+}
+
+function buildP2(){
+  return`
+  <div class="kgrid">
+    ${kcard('Vitesse moy.',KPI.vitesse,'km/h','▲ +1',true,'#118DFF')}
+    ${kcard('Congestion',KPI.congestion.toFixed(1),'/10','▼ +0.2',false,'#D64550')}
+    ${kcard('Zone critique','Centre','','⚠ 8.4/10',false,'#E66C37')}
+    ${kcard('Véhicules/h','12,4K','','▲ +3%',true,'#744EC2')}
+  </div>
+  <div class="st">Paramètres trafic</div>
+  ${mkSlider('vitesse','Vitesse moyenne',10,60,1,'#118DFF','km/h')}
+  ${mkSlider('congestion','Indice de congestion',1,10,.1,'#D64550','/10')}
+  <div class="st">Congestion par heure</div>
+  <div class="card"><div class="chart-wrap" style="height:92px"><canvas id="c2a"></canvas></div></div>
+  <div class="st">Congestion par zone</div>
+  <div class="card">
+    ${D.zcong.map(d=>{const col=d.v>=8?'#D64550':d.v>=6?'#E66C37':'#118DFF';return`<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span style="font-weight:600">${d.z}</span><span style="color:${col};font-weight:700">${d.v}/10</span></div>${pbar(d.v*10,col)}</div>`}).join('')}
+  </div>
+  <div class="st">Vitesse vs Congestion</div>
+  <div class="card"><div class="chart-wrap" style="height:118px"><canvas id="c2b"></canvas></div></div>`;
+}
+
+function buildP3(){
+  return`
+  <div class="kgrid">
+    ${kcard('Émissions CO₂',KPI.co2+'K','t','▲ −2.1%',true,'#E66C37')}
+    ${kcard('Qualité air','ATMO 3','','Moyen',false,'#D9B300')}
+    ${kcard('Conformité SNBC','86','%','▲ +2%',true,'#3FC670')}
+    ${kcard('Modes verts','34','%','▲ +5%',true,'#118DFF')}
+  </div>
+  ${mkSlider('co2','Émissions CO₂',80,200,1,'#E66C37','K t')}
+  <div class="insight-box"><div class="ins-hdr"><svg width="13" height="13" viewBox="0 0 24 24" fill="#118DFF"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>Analyse SNBC</div>
+  <div class="ins-txt">CO₂ actuel : <strong>${KPI.co2}K t</strong>. ${KPI.co2>145?'⚠ Dépasse la trajectoire SNBC.':'✓ Sous la cible SNBC.'} Réduction nécessaire : ${Math.max(0,KPI.co2-130).toFixed(0)}K t.</div></div>
+  <div class="st">CO₂ réel vs SNBC</div>
+  <div class="card"><div class="chart-wrap" style="height:92px"><canvas id="c3a"></canvas></div></div>
+  <div class="st">Classes ATMO</div>
+  <div class="card"><div class="chart-wrap" style="height:102px"><canvas id="c3b"></canvas></div></div>
+  <div class="st">Répartition CO₂ par mode</div>
+  <div class="card">
+    ${[['Voiture',62,'#D64550'],['Bus',18,'#E66C37'],['Métro/Tram',11,'#D9B300'],['Deux-roues',6,'#3FC670'],['Vélo/Piéton',3,'#118DFF']].map(([m,v,c])=>`<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span style="font-weight:600">${m}</span><span style="color:${c};font-weight:700">${v}%</span></div>${pbar(v,c)}</div>`).join('')}
+  </div>
+  <div class="sdg-row"><div class="sdg-num" style="background:#E66C37">11</div><div><div style="font-size:12px;font-weight:700">Villes durables</div><div style="font-size:10px;color:var(--mut);margin-top:2px">CO₂ : −2.1% ✓</div></div></div>
+  <div class="sdg-row" style="margin-bottom:0"><div class="sdg-num" style="background:#3F7E44">13</div><div><div style="font-size:12px;font-weight:700">Mesures climatiques</div><div style="font-size:10px;color:var(--mut);margin-top:2px">86% conforme ✓</div></div></div>`;
+}
+
+function buildP4(){
+  return`
+  <div class="st">Satisfaction usagers</div>
+  <div class="card"><div class="gauge-row">
+    ${gaugeHTML(KPI.satisfaction.toFixed(1),10,'Satisfaction','#3FC670')}
+    <div class="g-side"><div class="g-lbl">Objectif</div><div class="g-val">8,0/10</div>
+    <div class="g-chg ${KPI.satisfaction>=8?'up':'wn'}">${KPI.satisfaction>=8?'▲':'▼'} ${Math.abs(KPI.satisfaction-8).toFixed(1)} pts</div>
+    <div style="margin-top:10px"><div class="g-lbl">Répondants</div><div class="g-val">8 412</div></div></div>
+  </div></div>
+  ${mkSlider('satisfaction','Satisfaction usagers',4,10,.1,'#3FC670','/10')}
+  ${mkSlider('incidents','Incidents signalés',0,600,1,'#D64550','')}
+  ${mkSlider('delinquance','Délinquance Est (%)',0,10,.1,'#744EC2','%')}
+  <div class="st">Évolution satisfaction</div>
+  <div class="card"><div class="chart-wrap" style="height:88px"><canvas id="c4a"></canvas></div></div>
+  <div class="st">Key Drivers — Facteurs</div>
+  <div class="card">
+    ${D.satF.map(f=>{const col=f.v>=8?'#3FC670':f.v>=7?'#D9B300':'#D64550';return`<div style="margin-bottom:9px"><div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px"><span style="font-weight:600">${f.f}</span><span style="color:${col};font-weight:700">${f.v}/10</span></div>${pbar(f.v*10,col)}</div>`}).join('')}
+  </div>
+  <div class="st">Délinquance par zone</div>
+  <div class="card"><div class="chart-wrap" style="height:108px"><canvas id="c4b"></canvas></div></div>`;
+}
+
+let flowRuns=47,flowHist=[
+  {msg:'Alerte retard L7 Est (5.4 min)',col:'#D64550',t:'08:14',ch:'Gmail'},
+  {msg:'Congestion Centre (8.4/10)',col:'#D64550',t:'07:52',ch:'Gmail'},
+  {msg:'Satisfaction < seuil (7.5/10)',col:'#D9B300',t:'18:30',ch:'Gmail'},
+];
+
+function buildP5(){
+  const viol=[];
+  if(KPI.retard>THR.retard.a)viol.push({n:'Retard',v:KPI.retard.toFixed(1)+' min',s:'>'+THR.retard.a,c:'#D64550'});
+  if(KPI.congestion>THR.congestion.a)viol.push({n:'Congestion',v:KPI.congestion.toFixed(1)+'/10',s:'>'+THR.congestion.a,c:'#D64550'});
+  if(KPI.co2>THR.co2.a)viol.push({n:'CO₂',v:KPI.co2+'Kt',s:'>'+THR.co2.a,c:'#D64550'});
+
+  return`
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:11px;margin-bottom:11px">
+      <div style="width:38px;height:38px;background:linear-gradient(135deg,#0066FF,#00BCF2);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="19" height="19" viewBox="0 0 24 24" fill="white"><path d="M13 3L4 14h7l-2 7 9-11h-7l2-7z"/></svg></div>
+      <div style="flex:1"><div style="font-size:13px;font-weight:700">Power Automate Flow</div><div style="font-size:10px;color:var(--mut);margin-top:2px">Urban Mobility · ${ROLES[currentUser?.role]?.label||''}</div></div>
+      <div style="display:flex;align-items:center;gap:5px;background:rgba(63,198,112,.1);border:1px solid rgba(63,198,112,.25);border-radius:20px;padding:4px 9px;font-size:10px;font-weight:700;color:#3FC670"><div class="ldot"></div>Actif</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+      <div style="background:rgba(63,198,112,.08);border:1px solid rgba(63,198,112,.2);border-radius:9px;padding:8px"><div style="font-size:17px;font-weight:800;color:#3FC670">Actif</div><div style="font-size:9px;color:var(--mut);margin-top:2px">Statut</div></div>
+      <div style="background:rgba(214,69,80,.08);border:1px solid rgba(214,69,80,.2);border-radius:9px;padding:8px"><div style="font-size:17px;font-weight:800;color:#D64550" id="bc">${viol.length}</div><div style="font-size:9px;color:var(--mut);margin-top:2px">Alertes</div></div>
+      <div style="background:rgba(17,141,255,.08);border:1px solid rgba(17,141,255,.2);border-radius:9px;padding:8px"><div style="font-size:17px;font-weight:800;color:#118DFF" id="rc">${flowRuns}</div><div style="font-size:9px;color:var(--mut);margin-top:2px">Exéc.</div></div>
+    </div>
+  </div>
+
+  <div class="st">Violations actuelles (KPIs ajustés)</div>
+  <div class="card" style="padding:6px 13px">
+    ${viol.length?viol.map(v=>`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:.5px solid var(--bdr)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="${v.c}"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+      <div style="flex:1"><div style="font-size:11px;font-weight:600">${v.n}</div><div style="font-size:10px;color:var(--mut)">Actuel : <strong style="color:${v.c}">${v.v}</strong> · Seuil : ${v.s}</div></div>
+      <div class="badge" style="background:rgba(214,69,80,.18);color:#D64550">⚡ Alerte</div>
+    </div>`).join(''):
+    `<div style="padding:12px 0;text-align:center;color:var(--mut);font-size:12px">✓ Tous les KPIs sont dans les seuils</div>`}
+  </div>
+
+  <div class="st">Destinataire de l'alerte</div>
+  <input type="email" id="flow-email" placeholder="votre@email.com" value="${currentUser?.email||''}">
+
+  <div class="st">Étapes du Flow</div>
+  <div id="fsteps">
+    ${[['1','Déclencheur KPI','Lecture des violations de seuil'],
+       ['2','Analyse IA Claude','Génération du rapport alerte'],
+       ['3','Envoi Gmail MCP','Notification email au décideur'],
+       ['4','Confirmation','Enregistrement dans historique']].map(([n,t,d],i)=>`
+    <div class="flow-step fs-pending" id="fs-${i}">
+      <div class="fsl"><div class="fsic">${n}</div>${i<3?'<div class="fsline"></div>':''}</div>
+      <div class="fsb"><div class="fstitle">${t}</div><div class="fsdesc">${d}</div></div>
+    </div>`).join('')}
+  </div>
+
+  <button class="btn btn-p" id="flow-btn" onclick="runFlow()"><svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M13 3L4 14h7l-2 7 9-11h-7l2-7z"/></svg>Déclencher le Flow</button>
+  <button class="btn btn-s" onclick="runFlow('full')">Rapport complet + Email</button>
+
+  <div class="st">Journal d'exécution</div>
+  <div class="log-box" id="flog">
+    <div class="lINFO">[Flow] Actif · Rôle ${currentUser?.fname||''} (${ROLES[currentUser?.role]?.short||''})</div>
+    <div class="l${viol.length?'ERR':'OK'}">[KPI] ${viol.length?viol.length+' violation(s) détectée(s)':'Tous les seuils respectés'}</div>
+    <div class="lINFO">[Gmail] MCP connecté · Prêt</div>
+  </div>
+
+  <div class="st">Historique</div>
+  <div class="card" style="padding:0 13px" id="fhist">
+    ${flowHist.map(h=>`<div style="display:flex;gap:9px;align-items:flex-start;padding:9px 0;border-bottom:.5px solid var(--bdr)"><div style="width:7px;height:7px;border-radius:50%;background:${h.col};flex-shrink:0;margin-top:4px"></div><div><div style="font-size:11px;color:var(--txt)">${h.msg}</div><div style="font-size:10px;color:var(--mut);margin-top:3px">Aujourd'hui ${h.t} · ${h.ch}</div></div></div>`).join('')}
+  </div>`;
+}
+
+// ════════════════════════════════════════
+//  CHARTS
+// ════════════════════════════════════════
+Chart.defaults.color='#6B7599';
+Chart.defaults.font.family="-apple-system,'Segoe UI',sans-serif";
+Chart.defaults.font.size=10;
+const SC={x:{grid:{display:false},ticks:{color:'#6B7599',font:{size:9}},border:{display:false}},y:{grid:{color:'rgba(37,43,59,.4)'},ticks:{display:false},border:{display:false}}};
+const TT={plugins:{legend:{display:false},tooltip:{backgroundColor:'#0F1520',borderColor:'#2A3255',borderWidth:1,titleColor:'#6B7599',bodyColor:'#E8ECF5',padding:8,cornerRadius:8}}};
+let charts=[];
+function destroyCharts(){charts.forEach(c=>{try{c.destroy()}catch(e){}});charts=[]}
+function mkC(id,cfg){const el=document.getElementById(id);if(!el)return;const ch=new Chart(el,cfg);charts.push(ch)}
+function grd(ctx,col,h){const g=ctx.chart.ctx.createLinearGradient(0,0,0,h);g.addColorStop(0,col+'38');g.addColorStop(1,col+'00');return g}
+
+function renderCharts(p){
+  if(p===0)mkC('c0',{type:'line',data:{labels:D.months,datasets:[{data:D.sat,borderColor:'#3FC670',borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#3FC670',tension:.4,fill:true,backgroundColor:ctx=>grd(ctx,'#3FC670',88),label:'Score'}]},options:{...TT,responsive:true,maintainAspectRatio:false,scales:{...SC,y:{...SC.y,min:6,max:9}}}});
+  if(p===1)mkC('c1',{type:'line',data:{labels:D.months,datasets:[{data:D.mdelay,borderColor:'#E66C37',borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#E66C37',tension:.4,fill:true,backgroundColor:ctx=>grd(ctx,'#E66C37',88),label:'Retard'}]},options:{...TT,responsive:true,maintainAspectRatio:false,scales:{...SC,y:{...SC.y,min:3,max:6}}}});
+  if(p===2){
+    mkC('c2a',{type:'line',data:{labels:D.hL,datasets:[{data:D.hcong,borderColor:'#D64550',borderWidth:2.5,pointRadius:0,tension:.4,fill:true,backgroundColor:ctx=>grd(ctx,'#D64550',92),label:'Indice'}]},options:{...TT,responsive:true,maintainAspectRatio:false,scales:{...SC,y:{...SC.y,min:0,max:10}}}});
+    mkC('c2b',{type:'scatter',data:{datasets:[{data:[{x:22,y:8.9},{x:25,y:7.1},{x:28,y:6.4},{x:31,y:5.1},{x:35,y:3.8},{x:20,y:9.2},{x:38,y:2.5},{x:30,y:5.9},{x:26,y:7.5},{x:33,y:4.2}],backgroundColor:['#D64550','#E66C37','#E66C37','#118DFF','#3FC670','#D64550','#3FC670','#118DFF','#E66C37','#3FC670'],pointRadius:5,label:'Zones'}]},options:{responsive:true,maintainAspectRatio:false,...TT,scales:{x:{...SC.x,min:15,max:45,title:{display:true,text:'Vitesse km/h',color:'#6B7599',font:{size:9}}},y:{grid:{color:'rgba(37,43,59,.4)'},ticks:{color:'#6B7599',font:{size:9}},border:{display:false},min:0,max:11}}}});
+  }
+  if(p===3){
+    mkC('c3a',{type:'line',data:{labels:D.co2.map(d=>d.m),datasets:[{data:D.co2.map(d=>d.a),borderColor:'#E66C37',borderWidth:2.5,pointRadius:3,pointBackgroundColor:'#E66C37',tension:.4,fill:false,label:'Réel'},{data:D.co2.map(d=>d.t),borderColor:'#3FC670',borderWidth:2,borderDash:[5,4],pointRadius:0,tension:.4,fill:false,label:'SNBC'}]},options:{...TT,responsive:true,maintainAspectRatio:false,scales:{...SC,y:{...SC.y,min:9,max:14}}}});
+    mkC('c3b',{type:'bar',data:{labels:['Bon','Moyen','Dégradé','Mauvais','T.Mauvais'],datasets:[{data:D.atmo,backgroundColor:['#3FC670','#D9B300','#E66C37','#D64550','#7B0000'],borderRadius:5,label:'Jours'}]},options:{...TT,responsive:true,maintainAspectRatio:false,scales:{...SC}}});
+  }
+  if(p===4){
+    mkC('c4a',{type:'line',data:{labels:D.months,datasets:[{data:D.sat,borderColor:'#3FC670',borderWidth:2.5,pointRadius:4,pointBackgroundColor:'#3FC670',tension:.4,fill:true,backgroundColor:ctx=>grd(ctx,'#3FC670',88),label:'Score'}]},options:{...TT,responsive:true,maintainAspectRatio:false,scales:{...SC,y:{...SC.y,min:6.5,max:8.5}}}});
+    mkC('c4b',{type:'bar',data:{labels:['Centre','Nord','Est','Sud','Ouest'],datasets:[{data:[4.2,3.1,5.4,2.8,1.9],backgroundColor:['#E66C37','#3FC670','#D64550','#3FC670','#3FC670'],borderRadius:5,label:'Taux %'}]},options:{...TT,responsive:true,maintainAspectRatio:false,scales:{...SC}}});
+  }
+}
+
+// ════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════
+const PAGE_LBL=["Vue d'ensemble","Transport","Trafic Urbain","Environnement","Sécurité","Power Automate Flow"];
+const BUILDERS=[buildP0,buildP1,buildP2,buildP3,buildP4,buildP5];
+let currentPage=-1;
+
+function goTo(p){
+  const ct=document.getElementById('content');ct.style.opacity='0';
+  document.querySelectorAll('.ni').forEach(el=>el.classList.toggle('act',+el.dataset.p===p));
+  document.getElementById('page-lbl').textContent=PAGE_LBL[p];
+  const badge=document.getElementById('flow-badge');if(badge)badge.style.display=p===5?'none':'flex';
+  setTimeout(()=>{destroyCharts();ct.innerHTML=BUILDERS[p]();ct.scrollTop=0;currentPage=p;ct.style.opacity='1';ct.style.transition='opacity .14s';setTimeout(()=>renderCharts(p),55)},120);
+}
+
+// ── DATA maps for filtering ──
+const MODE_DATA={
+  'Bus':    {charge:KPI.charge_bus, color:'#118DFF', lines:['L1 Express','L3 Central','L9 Circ.']},
+  'Métro':  {charge:KPI.charge_metro,color:'#12239E', lines:['L5 Nord']},
+  'Tram':   {charge:KPI.charge_tram, color:'#744EC2', lines:['L7 Est']},
+};
+const LINE_MODE={
+  'L1 Express':'Bus','L3 Central':'Bus','L5 Nord':'Métro',
+  'L7 Est':'Tram','L9 Circ.':'Bus'
+};
+
+function fchip(el){
+  el.closest('.chips').querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  const filter=el.textContent.trim();
+
+  // ── Filter charge bars ──
+  const chargeSection=document.getElementById('charge-section');
+  if(chargeSection){
+    const allModes=[['Bus',KPI.charge_bus,'#118DFF'],['Métro',KPI.charge_metro,'#12239E'],['Tram',KPI.charge_tram,'#744EC2']];
+    const visible=filter==='Tous'?allModes:allModes.filter(([m])=>m===filter);
+    chargeSection.innerHTML=visible.map(([m,v,c])=>`
+      <div style="margin-bottom:9px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+          <span style="font-weight:600">${m}</span><span style="color:${c};font-weight:700">${v}%</span>
+        </div>${pbar(v,c)}
+      </div>`).join('');
+  }
+
+  // ── Filter lines table ──
+  const linesBody=document.getElementById('lines-tbody');
+  if(linesBody){
+    const visibleLines=filter==='Tous'?D.lines:D.lines.filter(l=>LINE_MODE[l.l]===filter);
+    if(visibleLines.length===0){
+      linesBody.innerHTML=`<tr><td colspan="3" style="text-align:center;color:var(--mut);padding:14px 0">Aucune ligne pour ce mode</td></tr>`;
+    }else{
+      linesBody.innerHTML=visibleLines.map(l=>{
+        const col=l.d>5?'#D64550':l.d>3?'#E66C37':'#3FC670';
+        const badge=l.d>5?`<span class="badge" style="background:rgba(214,69,80,.18);color:#D64550">Critique</span>`:
+          l.d>3?`<span class="badge" style="background:rgba(230,108,55,.18);color:#E66C37">Modéré</span>`:
+          `<span class="badge" style="background:rgba(63,198,112,.18);color:#3FC670">OK</span>`;
+        const modeBadge=`<span style="font-size:9px;color:var(--mut);margin-right:6px">${LINE_MODE[l.l]||''}</span>`;
+        return`<tr><td>${modeBadge}${l.l}</td><td style="color:${col};font-weight:700">${l.d} min</td><td>${badge}</td></tr>`;
+      }).join('');
+    }
+  }
+
+  // ── Filter slider (show only relevant one) ──
+  const slBus=document.getElementById('sl-charge_bus');
+  const slMetro=document.getElementById('sl-charge_metro');
+  const slTram=document.getElementById('sl-charge_tram');
+  [['Bus',slBus],['Métro',slMetro],['Tram',slTram]].forEach(([m,sl])=>{
+    if(sl){
+      const card=sl.closest('.kpi-ctrl');
+      if(card)card.style.display=(filter==='Tous'||filter===m)?'block':'none';
+    }
+  });
+
+  // ── Update gauge if single mode ──
+  if(filter!=='Tous'&&MODE_DATA[filter]){
+    const gaugeSvg=document.querySelector('#gauge-retard svg');
+    // gauge stays on retard global
+  }
+
+  toast('🔽','Filtre : '+filter,filter==='Tous'?'Tous les modes affichés':filter+' sélectionné — données filtrées');
+}
+
+// ════════════════════════════════════════
+//  POWER AUTOMATE FLOW
+// ════════════════════════════════════════
+async function runFlow(mode){
+  const btn=document.getElementById('flow-btn');if(!btn)return;
+  btn.disabled=true;btn.textContent='Flow en cours...';
+  const recipient=document.getElementById('flow-email')?.value.trim()||currentUser?.email||'ops@urbanmobility.fr';
+  [0,1,2,3].forEach(i=>{const e=document.getElementById('fs-'+i);if(e)e.className='flow-step fs-pending'});
+  const addLog=(m,t='INFO')=>{const b=document.getElementById('flog');if(!b)return;const n=new Date();const ts=n.getHours().toString().padStart(2,'0')+':'+n.getMinutes().toString().padStart(2,'0')+':'+n.getSeconds().toString().padStart(2,'0');const d=document.createElement('div');d.className='l'+t;d.textContent=`[${ts}] ${m}`;b.appendChild(d);b.scrollTop=b.scrollHeight};
+  const setStep=(i,st,desc)=>{const e=document.getElementById('fs-'+i);if(!e)return;e.className='flow-step fs-'+st;const ic=e.querySelector('.fsic');if(ic)ic.textContent=st==='done'?'✓':st==='err'?'✕':(i+1);if(desc){const d=e.querySelector('.fsdesc');if(d)d.textContent=desc}};
+  const delay=ms=>new Promise(r=>setTimeout(r,ms));
+
+  addLog('=== FLOW DÉCLENCHÉ par '+currentUser?.fname+' ('+ROLES[currentUser?.role]?.short+') ===','INFO');
+  setStep(0,'running');await delay(700);
+  const viol=[];
+  if(KPI.retard>THR.retard.a)viol.push(`Retard=${KPI.retard.toFixed(1)}min`);
+  if(KPI.congestion>THR.congestion.a)viol.push(`Congestion=${KPI.congestion.toFixed(1)}`);
+  if(KPI.co2>THR.co2.a)viol.push(`CO₂=${KPI.co2}K`);
+  addLog(`KPIs : Retard=${KPI.retard.toFixed(1)}, Cong=${KPI.congestion.toFixed(1)}, CO₂=${KPI.co2}K, Sat=${KPI.satisfaction.toFixed(1)}`,'OK');
+  addLog(`${viol.length} violation(s) : ${viol.join(', ')||'Aucune'}`,viol.length?'ERR':'OK');
+  setStep(0,'done',`${viol.length} violation(s) détectée(s)`);
+
+  setStep(1,'running');addLog('Appel Claude API pour analyse...','INFO');
+  let analysis='';
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:350,messages:[{role:'user',content:`Tu es Power Automate Urban Mobility. Génère un rapport d'alerte en ${mode==='full'?'8':'4'} lignes max, français, texte brut.\nRôle décideur : ${ROLES[currentUser?.role]?.label||'DG'}\nKPIs : Retard=${KPI.retard.toFixed(1)}min, Congestion=${KPI.congestion.toFixed(1)}/10, CO₂=${KPI.co2}Kt, Satisfaction=${KPI.satisfaction.toFixed(1)}/10\nViolations : ${viol.join(', ')||'Aucune'}\n${mode==='full'?'Inclure analyse, impact et 2 recommandations.':'Résumé direct.'}`}]})});
+    const d=await r.json();analysis=d.content?.[0]?.text||'';
+    addLog('Rapport IA : '+analysis.length+' car.','OK');setStep(1,'done','Rapport IA généré');
+  }catch(e){
+    analysis=`Rapport Urban Mobility · ${ROLES[currentUser?.role]?.label||'DG'}\nKPIs : Retard=${KPI.retard.toFixed(1)}min, Congestion=${KPI.congestion.toFixed(1)}/10, CO₂=${KPI.co2}Kt.\n${viol.length?'Action corrective requise.':'Situation nominale.'}`;
+    addLog('Rapport local généré','INFO');setStep(1,'done','Rapport local');
+  }
+
+  setStep(2,'running');addLog('Envoi email → '+recipient,'INFO');
+  const subj=`⚡ [FLOW] Urban Mobility — ${viol.length} alerte(s) · ${new Date().toLocaleDateString('fr-FR')}`;
+  const body=`ALERTE POWER AUTOMATE — Urban Mobility\n${'═'.repeat(40)}\nExpéditeur : ${currentUser?.fname} ${currentUser?.lname} (${ROLES[currentUser?.role]?.label})\nDate : ${new Date().toLocaleString('fr-FR')}\n\nKPIs SURVEILLÉS :\n• Retard : ${KPI.retard.toFixed(1)} min (seuil 4.0)\n• Congestion : ${KPI.congestion.toFixed(1)}/10 (seuil 8.0)\n• CO₂ : ${KPI.co2}Kt\n• Satisfaction : ${KPI.satisfaction.toFixed(1)}/10\n\nANALYSE :\n${analysis}\n${'═'.repeat(40)}\nUrban Mobility Power Automate`;
+
+  let sent=false;
+  try{
+    const gr=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:800,messages:[{role:'user',content:`Send an email:\nTo: ${recipient}\nSubject: ${subj}\nBody: ${body}\nSend it now.`}],mcp_servers:[{type:'url',url:'https://gmail.mcp.claude.com/mcp',name:'gmail-mcp'}]})});
+    const gd=await gr.json();
+    sent=gd.content?.some(b=>b.type==='mcp_tool_use'||b.type==='tool_use')||(gd.content?.find(b=>b.type==='text')?.text||'').toLowerCase().includes('sent');
+  }catch(e){}
+
+  addLog(sent?'Email envoyé ✓':'Email préparé (connexion Gmail requise)',sent?'OK':'INFO');
+  setStep(2,'done',sent?'Email envoyé → '+recipient:'Email composé');
+
+  await delay(300);setStep(3,'done','Historique mis à jour');addLog('=== FLOW TERMINÉ ===','OK');
+  flowRuns++;const rc=document.getElementById('rc');if(rc)rc.textContent=flowRuns;
+  const now=new Date();const ht=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  const hmsg=sent?'Email envoyé → '+recipient:'Rapport : '+viol.join(' + ')||'Tous KPIs OK';
+  flowHist.unshift({msg:hmsg,col:viol.length?'#D64550':'#3FC670',t:ht,ch:'Gmail MCP'});
+  const fh=document.getElementById('fhist');
+  if(fh){const d=document.createElement('div');d.style.cssText='display:flex;gap:9px;align-items:flex-start;padding:9px 0;border-bottom:.5px solid var(--bdr)';d.innerHTML=`<div style="width:7px;height:7px;border-radius:50%;background:${viol.length?'#D64550':'#3FC670'};flex-shrink:0;margin-top:4px"></div><div><div style="font-size:11px;color:var(--txt)">${hmsg}</div><div style="font-size:10px;color:var(--mut);margin-top:3px">À l'instant · Gmail MCP</div></div>`;fh.insertBefore(d,fh.firstChild)}
+  toast(sent?'📧':'✅',sent?'Email envoyé !':'Flow exécuté',sent?recipient:viol.length+' alerte(s) • rapport prêt',viol.length?'rgba(214,69,80,.4)':'rgba(17,141,255,.35)');
+  btn.disabled=false;btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="white"><path d="M13 3L4 14h7l-2 7 9-11h-7l2-7z"/></svg> Déclencher à nouveau';
+}
+
+// ════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════
+renderDemoAccounts();
+</script>
+</body>
+</html>
