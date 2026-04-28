@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+
+  # ── API FastAPI ─────────────────────────────────────────────────────────────
+  urbanai-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: urbanai_api
+    ports:
+      - "8000:8000"
+    environment:
+      - DW_SERVER=host.docker.internal
+      - DW_DATABASE=dwurbanmobility
+      - DW_USER=miming
+      - DW_PASSWORD=miming
+    volumes:
+      - ./models:/app/models
+      - ./predictions_urbanai.db:/app/predictions_urbanai.db
+      - ./mlruns:/app/mlruns
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - urbanai-network
+
+networks:
+  urbanai-network:
+    driver: bridge
